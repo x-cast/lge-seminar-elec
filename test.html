@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" href="https://www.theborn.co.kr/wp-content/uploads/2017/07/cropped-theborn_favi-32x32.png" sizes="32x32" />
+    <link rel="icon" href="https://www.theborn.co.kr/wp-content/uploads/2017/07/cropped-theborn_favi-192x192.png" sizes="192x192" />
+    <link rel="apple-touch-icon-precomposed" href="https://www.theborn.co.kr/wp-content/uploads/2017/07/cropped-theborn_favi-180x180.png" />
+    <script src="./janus.js"></script>
+    <script src="./test.js"></script>
+    <script src="./adapter.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>더본</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <div id="modal"></div>
+    <script>
+      window.onload = function () {
+        async function getSourceId() {
+          //screenId 가져와서 녹화 시작
+          window.api.receive("source", (data) => {
+            startScreenCapture(JSON.parse(data));
+          });
+          const sourceId = await window.api.send("source");
+        }
+
+        function handleStream(stream) {
+          const video = document.createElement("video");
+          video.srcObject = stream;
+          video.onloadedmetadata = (e) => video.play();
+          document.body.appendChild(video);
+          const a = new Record_Cast();
+          a.init(stream, 1215161, 1);
+        }
+
+        function handleError(err) {
+          console.log(err);
+          alert("녹화에 실패하였습니다. ", err);
+        }
+
+        function startScreenCapture(data) {
+          const { screenId, os } = data;
+          navigator.webkitGetUserMedia(
+            {
+              audio:
+                os == "windows"
+                  ? {
+                      mandatory: {
+                        chromeMediaSource: "desktop",
+                        chromeMediaSourceId: screenId,
+                      },
+                    }
+                  : false,
+              video: {
+                mandatory: {
+                  chromeMediaSource: "desktop",
+                  chromeMediaSourceId: screenId,
+                  minWidth: 1280,
+                  maxWidth: 1280,
+                  minHeight: 720,
+                  maxHeight: 720,
+                },
+              },
+            },
+            handleStream,
+            handleError
+          );
+        }
+
+        getSourceId();
+      };
+    </script>
+  </body>
+</html>

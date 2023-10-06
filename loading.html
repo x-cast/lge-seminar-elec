@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>XMoa</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        border: 0;
+        list-style: none;
+        text-decoration: none;
+        outline: 0;
+        user-select: none;
+        -webkit-tap-highlight-color: rgba(255, 255, 255, 0);
+        -webkit-touch-callout: none;
+      }
+
+      button,
+      input,
+      textarea {
+        border-radius: 0;
+      }
+
+      input,
+      textarea {
+        user-select: auto;
+      }
+
+      img {
+        -webkit-user-drag: none;
+      }
+
+      html {
+        position: fixed;
+        width: 100vw;
+        height: 100%;
+        overflow: hidden;
+      }
+
+      body {
+        position: fixed;
+        width: 100vw;
+        height: 100%;
+        overflow: hidden;
+        -webkit-text-size-adjust: none;
+      }
+
+      .container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+        background-color: #aaaaaa;
+      }
+
+      .loader {
+        width: 48px;
+        height: 48px;
+        border: 5px solid #fff;
+        border-bottom-color: transparent;
+        border-radius: 50%;
+        display: inline-block;
+        box-sizing: border-box;
+        animation: rotation 1s linear infinite;
+      }
+
+      @keyframes rotation {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      .text {
+        margin-top: 12px;
+        color: white;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <span class="loader"></span>
+      <div class="text">업데이트 중입니다.</div>
+    </div>
+  </body>
+</html>

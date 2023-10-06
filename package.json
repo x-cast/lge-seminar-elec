@@ -1,0 +1,53 @@
+{
+  "name": "lgeseminar-admin",
+  "version": "1.1.0",
+  "description": "",
+  "main": "main.js",
+  "build": {
+    "appId": "com.lge.seminar.admin",
+    "productName": "lgeseminar",
+    "mac": {
+      "target": {
+        "target": "dmg"
+      }
+    },
+    "win": {
+      "icon": "./icon.ico",
+      "publish": [
+        "github"
+      ],
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": true,
+      "include": "build/installer.nsh"
+    }
+  },
+  "scripts": {
+    "start": "electron .",
+    "deploy": "electron-builder build --win --publish always",
+    "deploy:mac": "electron-builder build --mac --publish always",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "dotenv-cli": "^7.3.0",
+    "electron": "^25.3.1",
+    "electron-builder": "^24.6.3"
+  },
+  "dependencies": {
+    "dotenv": "^16.3.1",
+    "electron-log": "^4.4.8",
+    "electron-store": "^8.1.0",
+    "electron-updater": "^6.1.1"
+  },
+  "vPrefixedTagName": true
+}
