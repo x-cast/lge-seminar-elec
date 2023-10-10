@@ -1,22 +1,20 @@
-const { app, BrowserWindow, ipcMain, globalShortcut, desktopCapturer } = require('electron')
+const { app, BrowserWindow, ipcMain, globalShortcut } = require('electron')
 const path = require("path");
-const DB = require("./modules/db.js");
 const update = require("./modules/update.js");
-require('dotenv').config()
+require('dotenv').config({ path: require('path').join(__dirname, '.env') })
 
-let db = null, resetInterval = null, resetCount = 0
-let updateWin = null
+let deeplinkingUrl
+let updateWin = null, mainWin = null
 const createWindow = (datas) => {
-    console.log(process.env)
     const win = new BrowserWindow({
         name: "LGE-AdminPlayer",
-        alwaysOnTop: true,
         autoHideMenuBar: true,
         resizable: false,
-        height: 720,
-        width: 1280,
+        height: 1080,
+        width: 1920,
         titleBarStyle: 'hidden',
-        titleBarOverlay: true,
+        roundedCorners: false,
+        // titleBarOverlay: true,
         webPreferences: {
             // devTools: false,
             nodeIntegration: false, // is default value after Electron v5
@@ -25,6 +23,7 @@ const createWindow = (datas) => {
             preload: path.join(__dirname, "preload.js") // use a preload script
         }
     })
+    mainWin = win
     win.webContents.on('did-finish-load', (evt) => {
         win.webContents.send('main', JSON.stringify(datas))
     })
@@ -38,10 +37,22 @@ const createWindow = (datas) => {
         const os = platforms[process.platform];
         win.webContents.send('source', JSON.stringify({ screenId: win.getMediaSourceId(), os }))
     })
-    win.loadURL(`${process.env.LGE_ADDR}/seminar_docs/1/1?authrized=${process.env.LGE_KEY}`)
+    mainWin.on('closed', function () {
+        mainWin = null
+    })
+    deeplinkingUrl = process.argv.slice(1) && process.argv.slice(1).find((arg) => arg.startsWith('lgeadminseminar://'));
+    win.loadFile(path.join(__dirname, 'loading-first.html'))
+    if (deeplinkingUrl != null && deeplinkingUrl != ".") {
+        const data = deeplinkingUrl.replace("lgeadminseminar://", "")
+        const realData = data.split("&")
+        const channel = realData[0]
+        const room = realData[1]
+        mainWin.loadURL(`${process.env.LGE_ADDR}/seminar_docs/${channel}/${room}?authrized=${process.env.LGE_KEY}`)
+    }
 }
 
 function createDefaultUpdateWindow() {
+    if (mainWin != null) mainWin.quit()
     updateWin = new BrowserWindow(
         {
             autoHideMenuBar: true,
@@ -52,21 +63,61 @@ function createDefaultUpdateWindow() {
     updateWin.on("closed", () => {
         updateWin = null;
     })
-    // updateWin.loadURL(`file://${__dirname}/version.html#v${app.getVersion()}`);
     updateWin.loadFile(path.join(__dirname, 'loading.html'))
     return updateWin;
 }
-
 app.whenReady().then(() => {
     const autoUpdater = new update({
         needUpdate: () => {
             createDefaultUpdateWindow()
         },
         noUpdate: () => {
-            createWindow()
+            if (BrowserWindow.getAllWindows().length === 0)
+                createWindow()
+
+            if (isDev())
+                mainWin.loadURL(`${process.env.LGE_ADDR}/seminar_docs/1/1?authrized=${process.env.LGE_KEY}`)
+
         }
     }, isDev())
     autoUpdater.checkForUpdates();
+})
+
+const gotTheLock = app.requestSingleInstanceLock();
+if (!gotTheLock) {
+    return app.quit();
+} else {
+    app.on('second-instance', (e, argv) => {
+        if (mainWin) {
+            if (mainWin.isMinimized() || !mainWin.isVisible()) {
+                mainWin.show();
+            }
+            mainWin.focus();
+        }
+        if (process.platform !== 'darwin') {
+            deeplinkingUrl = argv.find((arg) => arg.startsWith('lgeadminseminar://'));
+        }
+        if (deeplinkingUrl != null) {
+            const data = deeplinkingUrl.replace("lgeadminseminar://", "")
+            const realData = data.split("&")
+            const channel = realData[0]
+            const room = realData[1]
+            mainWin.loadURL(`${process.env.LGE_ADDR}/seminar_docs/${channel}/${room}?authrized=${process.env.LGE_KEY}`)
+        } else app.quit()
+    });
+}
+
+app.on('will-finish-launching', function () {
+    // Protocol handler for osx
+    app.on('open-url', function (event, url) {
+        event.preventDefault()
+        deeplinkingUrl = url
+        const data = deeplinkingUrl.replace("lgeadminseminar://", "")
+        const realData = data.split("&")
+        const channel = realData[0]
+        const room = realData[1]
+        mainWin.loadURL(`${process.env.LGE_ADDR}/seminar_docs/${channel}/${room}?authrized=${process.env.LGE_KEY}`)
+    })
 })
 
 app.on('window-all-closed', () => {
@@ -79,16 +130,6 @@ app.on('browser-window-focus', function () {
     globalShortcut.register("F5", () => {
         console.log("Refresh disable");
     });
-    globalShortcut.register("`", () => {
-        resetCount++
-        if (resetInterval == null) resetInterval = setTimeout(() => { resetInterval = null, resetCount = 0 }, 2000)
-        if (resetCount >= 5) {
-            db.deleteData("id")
-            db.deleteData("name")
-            db.deleteData("admin")
-            app.quit()
-        }
-    })
 });
 app.on('browser-window-blur', function () {
     globalShortcut.unregister('CommandOrControl+R');
@@ -96,6 +137,18 @@ app.on('browser-window-blur', function () {
     globalShortcut.unregister('`');
 });
 
+if (!app.isDefaultProtocolClient('lgeadminseminar')) {
+    // Define custom protocol handler. Deep linking works on packaged versions of the application!
+    app.setAsDefaultProtocolClient('lgeadminseminar')
+}
+
 function isDev() {
     return !app.isPackaged;
 };
+
+function logEverywhere(s) {
+    console.log(s)
+    if (mainWin && mainWin.webContents) {
+        mainWin.webContents.executeJavaScript(`console.log("${s}")`)
+    }
+}

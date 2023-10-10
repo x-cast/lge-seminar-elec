@@ -1,11 +1,20 @@
 {
   "name": "lgeseminar-admin",
-  "version": "1.1.0",
+  "version": "1.1.19",
   "description": "",
   "main": "main.js",
   "build": {
     "appId": "com.lge.seminar.admin",
+    "artifactName": "${productName}-setup.${ext}",
     "productName": "lgeseminar",
+    "protocols": [
+      {
+        "name": "lgeadminseminar",
+        "schemes": [
+          "lgeadminseminar"
+        ]
+      }
+    ],
     "mac": {
       "target": {
         "target": "dmg"
@@ -26,8 +35,7 @@
       ]
     },
     "nsis": {
-      "oneClick": true,
-      "include": "build/installer.nsh"
+      "runAfterFinish": false
     }
   },
   "scripts": {
